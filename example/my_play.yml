@@ -1,0 +1,48 @@
+- name: My Test Play
+  hosts:
+    - localhost
+  gather_facts: false
+  tasks:
+    - name: List Mail Accounts
+      hamburg_adfc.jpberlin.email_accounts_info:
+        login:
+          user: "{{ lookup('ansible.builtin.env','JP_USER') }}"
+          password: "{{ lookup('ansible.builtin.env','JP_PASS') }}"
+        domain: "adfc-intern.de"
+
+    - name: Create E-Mail 1
+      hamburg_adfc.jpberlin.email_account:
+        login:
+          user: "{{ lookup('ansible.builtin.env','JP_USER') }}"
+          password: "{{ lookup('ansible.builtin.env','JP_PASS') }}"
+        email: ansible.test@adfc-intern.de
+        password: "{{ lookup('ansible.builtin.env','JP_PASS') }}"
+        memo: "Ansible 1"
+
+    - name: Create E-Mail 2
+      hamburg_adfc.jpberlin.email_account:
+        login:
+          user: "{{ lookup('ansible.builtin.env','JP_USER') }}"
+          password: "{{ lookup('ansible.builtin.env','JP_PASS') }}"
+        email: ansible-forward1@adfc-intern.de
+        forwards:
+          - ansible-forward2@adfc-intern.de
+          - ansible-forward3@adfc-intern.de
+        mail_type: forward
+        password: "{{ lookup('ansible.builtin.env','JP_PASS') }}"
+
+    - name: Change Memo
+      hamburg_adfc.jpberlin.email_account:
+        login:
+          user: "{{ lookup('ansible.builtin.env','JP_USER') }}"
+          password: "{{ lookup('ansible.builtin.env','JP_PASS') }}"
+        email: ansible.test@adfc-intern.de
+        memo: "Anbible 2"
+
+    - name: Delete Forward
+      hamburg_adfc.jpberlin.email_account:
+        login:
+          user: "{{ lookup('ansible.builtin.env','JP_USER') }}"
+          password: "{{ lookup('ansible.builtin.env','JP_PASS') }}"
+        email: ansible-forward1@adfc-intern.de
+        state: absent
