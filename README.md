@@ -11,7 +11,7 @@ apt install python3-validator
 pip install validator
 
 # Install Collection:
-ansible-galaxy collection install hamburg_adfc.jpberlin.
+ansible-galaxy collection install git+https://github.com/ADFC-Hamburg/ansible-jpberlin
 ```
 
 ## Example:
