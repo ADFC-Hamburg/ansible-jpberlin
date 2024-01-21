@@ -27,7 +27,7 @@ EXAMPLES = r'''
 name: Create an account
 hamburg_adfc.jpberlin.email_accounts_info:
   login:
-    username: info@example.com
+    user: info@example.com
     password: info_secret
   domain: example.com
 '''

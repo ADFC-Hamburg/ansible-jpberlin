@@ -122,6 +122,7 @@ def run_module():
             found = True
     if module.params['state'] == 'absent' and found is False:
         result['msg'] = 'Nothing to do, entry does not exists.'
+        module.logout_jpberlin()
         module.exit_json(**result)
     if module.params['state'] == 'absent':
         if not module.check_mode:

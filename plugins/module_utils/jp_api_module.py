@@ -7,11 +7,13 @@ from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
+from ansible.module_utils.six import PY3
+from ansible.module_utils.urls import fetch_url
+
+import json
 
 from ansible.module_utils.basic import AnsibleModule
 try:
-    import requests
-    import json
     import validators
 except ImportError:
     pass
@@ -37,7 +39,7 @@ class JPAPIModule(AnsibleModule):
     def json_rpc_call(self, method: str, params: dict):
         url = self.params['login']['jrpc_url']
         if not validators.url(url):
-            self.fail_json(msg='longin.jrpc_url is not a valid url')
+            self.fail_json(msg='login.jrpc_url is not a valid url')
 
         headers = {
             'Content-Type': 'application/json'
@@ -51,13 +53,28 @@ class JPAPIModule(AnsibleModule):
             "jsonrpc": "2.0",
             "id": 'adfc_ansible',
         }
-        response = requests.post(
-            url, data=json.dumps(payload), headers=headers).json()
+
+        raw_response, info = fetch_url(self, url, method='POST', data=json.dumps(payload), headers=headers)
+        try:
+            # In Python 2, reading from a closed response yields a TypeError.
+            # In Python 3, read() simply returns ''
+            if PY3 and raw_response.closed:
+                raise TypeError
+            content = raw_response.read()
+        except (AttributeError, TypeError):
+            content = info.pop('body', None)
         err_out = {
             'payload': payload,
             'headers': headers,
-            'response': response,
+            'info': info,
         }
+        try:
+            response = json.loads(content.decode('utf8'))
+        except Exception:
+            self.fail_json(msg='cannot decode json', **err_out)
+
+        err_out['response'] = response
+
         if 'error' in response.keys():
             self.fail_json(msg=response['error']['message'], **err_out)
         if 'result' not in response.keys():
