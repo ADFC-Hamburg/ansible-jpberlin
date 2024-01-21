@@ -1,0 +1,4 @@
+plugins/module_utils/jp_api_module.py compile-2.7!skip
+plugins/module_utils/jp_api_module.py import-2.7!skip
+plugins/modules/email_account.py import-2.7!skip
+plugins/modules/email_accounts_info.py import-2.7!skip
