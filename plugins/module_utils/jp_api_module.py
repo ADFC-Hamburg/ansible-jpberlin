@@ -1,26 +1,30 @@
+# -*- coding: utf-8 -*-
+
+# Copyright: Contributors to the Ansible project
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
 
 from ansible.module_utils.basic import AnsibleModule
-import requests
-import json
-import validators
+try:
+    import requests
+    import json
+    import validators
+except ImportError:
+    pass
 
 
 class JPAPIModule(AnsibleModule):
-    def __init__(self, argument_spec, bypass_checks=False, no_log=False,
-                 mutually_exclusive=None, required_together=None,
-                 required_one_of=None, add_file_common_args=False,
-                 supports_check_mode=False, required_if=None, required_by=None):
+    def __init__(self, argument_spec):
 
         self.session = None
-        super().__init__(argument_spec, bypass_checks, no_log,
-                         mutually_exclusive, required_together,
-                         required_one_of, add_file_common_args,
-                         supports_check_mode, required_if, required_by)
+        super().__init__(argument_spec,
+                         supports_check_mode=True)
 
+    @staticmethod
     def get_login_argspec():
         login_argument_spec = dict(type="dict", required=True, options=dict(
             user=dict(type="str", required=True),
@@ -38,7 +42,7 @@ class JPAPIModule(AnsibleModule):
         headers = {
             'Content-Type': 'application/json'
         }
-        if self.session != None:
+        if self.session is not None:
             headers['Hpls-Auth'] = self.session
 
         payload = {

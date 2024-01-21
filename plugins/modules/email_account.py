@@ -1,11 +1,10 @@
 #!/usr/bin/python
-
-
 # -*- coding: utf-8 -*-
+
+# Copyright: Contributors to the Ansible project
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import (absolute_import, division, print_function)
-from ansible_collections.hamburg_adfc.jpberlin.plugins.module_utils.jp_api_module import JPAPIModule
-import validators
-import yaml
 
 __metaclass__ = type
 
@@ -21,6 +20,7 @@ options:
   email:
     description: Mail Address
     type: str
+    required: true
   password:
     description: Password
     type: str
@@ -34,9 +34,11 @@ options:
   forwards:
     description: Mail to forward the email to
     type: list
+    elements: str
+    default: []
   mail_type:
     description: forwards or also save mail in mailbox
-    type: choices
+    type: str
     default: inbox
     choices:
         - inbox
@@ -44,7 +46,7 @@ options:
         - inboxforward
   state:
     description: Create = present or Delete = absent value
-    type: choices
+    type: str
     choices:
         - present
         - absent
@@ -74,11 +76,15 @@ changed:
   description: Are there changes?
   returned: always
   type: bool
-data:
-  description: Data of the category
-  returned: always
-  type: complex
 '''
+
+from ansible_collections.hamburg_adfc.jpberlin.plugins.module_utils.jp_api_module import JPAPIModule
+
+try:
+    import validators
+    import yaml
+except ImportError:
+    pass
 
 
 def run_module():
@@ -99,13 +105,11 @@ def run_module():
         changed=False,
     )
 
-    module = JPAPIModule(
-        argument_spec=module_args,
-        supports_check_mode=True
-    )
+    module = JPAPIModule(argument_spec=module_args)
+
     if not validators.email(module.params['email']):
         module.fail_json(msg="email syntax invalid")
-    print(module.params['forwards'])
+
     for forward in module.params['forwards']:
         if not validators.email(forward):
             module.fail_json(msg="forward syntax invalid (%s)" % forward)
@@ -116,7 +120,7 @@ def run_module():
     for entry in res:
         if entry['mail'] == module.params['email']:
             found = True
-    if module.params['state'] == 'absent' and found == False:
+    if module.params['state'] == 'absent' and found is False:
         result['msg'] = 'Nothing to do, entry does not exists.'
         module.exit_json(**result)
     if module.params['state'] == 'absent':
@@ -169,35 +173,35 @@ def run_module():
             result['changed'] = True
             if not module.check_mode:
                 res = module.json_rpc_call('q.mail.memo.set', {
-                    'mail': module.params['email'], 'memo':  module.params['memo']})
+                    'mail': module.params['email'], 'memo': module.params['memo']})
         if call_inboxsave and inboxsave:
             if not module.check_mode:
                 res = module.json_rpc_call('q.mail.inboxsave.set', {
-                    'mail':  module.params['email'], 'inboxsave': inboxsave})
+                    'mail': module.params['email'], 'inboxsave': inboxsave})
 
         if sorted(res_mail_get['forwards']) != sorted(module.params['forwards']):
             result['changed'] = True
             if not module.check_mode:
                 res = module.json_rpc_call('q.mail.forward.set', {
-                    'mail': module.params['email'], 'forwards':  module.params['forwards']})
+                    'mail': module.params['email'], 'forwards': module.params['forwards']})
         if call_inboxsave and not inboxsave:
             if not module.check_mode:
                 res = module.json_rpc_call('q.mail.inboxsave.set', {
-                                           'mail':  module.params['email'], 'inboxsave': inboxsave})
+                                           'mail': module.params['email'], 'inboxsave': inboxsave})
         if module.params['force_password_set']:
             result['changed'] = True
             old['password'] = 'unknown'
             new['password'] = 'cenored'
             if not module.check_mode:
                 res = module.json_rpc_call('q.mail.password.set', {
-                    'mail': module.params['email'], 'password':  module.params['password']})
+                    'mail': module.params['email'], 'password': module.params['password']})
 
     else:
         if 'password' not in module.params.keys() or module.params['password'] is None:
             module.fail_json(
                 msg='Password must be specified as email does not exists')
 
-        if not 'memo' in module.params.keys() or module.params['memo'] is None:
+        if 'memo' not in module.params.keys() or module.params['memo'] is None:
             module.params['memo'] = ''
         params = {
             "domain": domain,
@@ -217,6 +221,9 @@ def run_module():
         if (module.params['mail_type'] in ['forward', 'inboxforward']):
             params['forwards'] = sorted(module.params['forwards'])
             new['forwards'] = sorted(module.params['forwards'])
+        else:
+            params['forwards'] = []
+            new['forwards'] = []
 
         result['changed'] = True
         if not module.check_mode:

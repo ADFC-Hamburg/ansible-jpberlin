@@ -1,9 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# Copyright: Contributors to the Ansible project
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import (absolute_import, division, print_function)
-from ansible_collections.hamburg_adfc.jpberlin.plugins.module_utils.jp_api_module import JPAPIModule
-import validators
 __metaclass__ = type
 
 
@@ -13,7 +14,7 @@ author:
 description: Get Mail Accounts of an domain
 extends_documentation_fragment:
 - hamburg_adfc.jpberlin.login
-module: idoit_cat_application_info
+module: email_accounts_info
 options:
   domain:
     description: E-Mail domain
@@ -41,24 +42,20 @@ mail_accounts:
   returned: always
   type: list
   elements: dict
-  options:
-    email:
-      description: Mail Address
-      type: str
-    type:
-      description: Type of Mail-Address, forward or inbox
-      type: choices
-      choices:
-        - forward
-        - inbox
-        - inboxforward
 '''
+
+from ansible_collections.hamburg_adfc.jpberlin.plugins.module_utils.jp_api_module import JPAPIModule
+
+try:
+    import validators
+except ImportError:
+    pass
 
 
 def run_module():
     module_args = dict(
         login=JPAPIModule.get_login_argspec(),
-        domain=dict(type='str', required=False)
+        domain=dict(type='str', required=True)
     )
 
     result = dict(
@@ -66,10 +63,8 @@ def run_module():
         mail_accounts=[],
     )
 
-    module = JPAPIModule(
-        argument_spec=module_args,
-        supports_check_mode=True
-    )
+    module = JPAPIModule(argument_spec=module_args)
+
     if not validators.domain(module.params['domain']):
         module.exit_json(msg="Domain syntax invalid")
     module.login_jpberlin()
